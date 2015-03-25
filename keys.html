@@ -29,9 +29,10 @@
       <mui-vkey id="vkey"></mui-vkey>
     </mui-rack>
 
-    <mui-rack label="spectrum">
+    <!-- <mui-rack label="spectrum">
       <mui-spectrum id="spec"></mui-spectrum>
-    </mui-rack>
+    </mui-rack> -->
+
   </div>
 
 
@@ -55,8 +56,8 @@
       // Get DOM handles with MUI.$ selector
       var genSelector = MUI.$('select-gen'),
           proSelector = MUI.$('select-pro'),
-          vkeySelector = MUI.$('vkey'),
-          specSelector = MUI.$('spec');
+          vkeySelector = MUI.$('vkey');
+      // var specSelector = MUI.$('spec');
 
       // Set data model and event handler
       genSelector.setModel(genModel);
@@ -104,7 +105,7 @@
         currGen = WX[genSelector.value]();
         currPro = WX[proSelector.value]();
         currGen.to(currPro).to(WX.Master);
-        currPro.to(specSelector);
+        // currPro.to(specSelector);
 
         // connecting keyboard input
         if (currGen.onData) {
