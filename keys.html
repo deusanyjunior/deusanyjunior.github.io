@@ -4,17 +4,19 @@
 <head>
 	<title>Keys Ex</title>
 
+  <!-- // Waax -->
   <script src="http://hoch.github.io/WAAX/waax/build/waax.min.js"></script>
   <script src="http://hoch.github.io/WAAX/waax/build/mui/bower_components/webcomponentsjs/webcomponents.min.js"></script>
   <link rel="import" href="http://hoch.github.io/WAAX/waax/build/mui/mui.html">
 	<link href='http://fonts.googleapis.com/css?family=Roboto:100,300,400,700|Roboto+Condensed:300,400,700' rel='stylesheet' type='text/css'>
   <link href='http://fonts.googleapis.com/css?family=Source+Code+Pro:500' rel='stylesheet' type='text/css'>
 	<link rel="stylesheet" href="http://hoch.github.io/WAAX/waax/examples/style.css">
-
+	<!-- //PubNub -->
+	<script src="http://cdn.pubnub.com/pubnub-3.7.1.min.js"></script>
 </head>
 <body unresolved>
-	<!-- This example uses Web MIDI input (from all available ports and channels) to drive a Web Audio monophonic synthesizer.  There is no UI.  <a href="http://github.com/cwilso/monosynth">Source available on github.</a> -->
 
+	<!-- // Waxx -->
   <div class="wx-container">
 
     <mui-select label="Generator" id="select-gen"></mui-select>
@@ -133,7 +135,47 @@
   </script>
   <script src="http://hoch.github.io/WAAX/waax/examples/examples.js"></script>
 
+
+
 	<script>
+		// Initialize with Publish & Subscribe Keys
+		var pubnub = PUBNUB.init({
+				publish_key: 'demo',
+				subscribe_key: 'demo'
+		});
+
+		// Verify the connection
+		pubnub.time(
+			function(time){
+					console.log(time)
+			}
+		);
+
+		// Subscribe to a channel
+		pubnub.subscribe({
+				channel: "keys_channel",
+				presence: function(m){console.log(m)},
+				message: parseMessage,
+				error: function (error) {
+					// Handle error here
+					console.log(JSON.stringify(error));
+				}
+		});
+
+		function parseMessage( message ) {
+			if (typeof message.noteOn !== 'undefined') {
+				noteOn(message.noteOn);
+				console.log(message.noteOn)
+			} else if (typeof message.noteOff !== 'undefined') {
+				noteOff(message.noteOff);
+				console.log(message.noteOff)
+			}
+
+		}
+
+
+
+		// <!-- This example uses Web MIDI input (from all available ports and channels) to drive a Web Audio monophonic synthesizer.  There is no UI.  <a href="http://github.com/cwilso/monosynth">Source available on github.</a> -->
 	/* Copyright 2013 Chris Wilson
 		Licensed under the Apache License, Version 2.0 (the "License");
 		you may not use this file except in compliance with the License.
@@ -192,11 +234,19 @@
 			case 0x90:
 				if (event.data[2]!=0) {  // if velocity != 0, this is a note-on message
 					noteOn(event.data[1]);
+					pubnub.publish({
+		          channel: 'keys_channel',
+		          message: {"noteOn": event.data[1]}
+		      });
 					return;
 				}
 				// if velocity == 0, fall thru: it's a note-off.  MIDI's weird, ya'll.
 			case 0x80:
 				noteOff(event.data[1]);
+				pubnub.publish({
+						channel: 'keys_channel',
+						message: {"noteOff": event.data[1]}
+				});
 				return;
 		}
 	}
@@ -205,11 +255,11 @@
 		return 440 * Math.pow(2,(note-69)/12);
 	}
 
-	function noteOn(noteNumber) {
-		vkeySelector._keyOn(noteNumber,100);
+	function noteOn(note) {
+		vkeySelector._keyOn(note,100);
 	}
-	function noteOff(noteNumber) {
-		vkeySelector._keyOff(noteNumber);
+	function noteOff(note) {
+		vkeySelector._keyOff(note);
 	}
 	</script>
 
