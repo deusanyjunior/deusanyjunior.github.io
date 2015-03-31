@@ -1,0 +1,145 @@
+<html>
+  <head>
+    <style>
+      * {
+        padding: 0;
+        margin: 0;
+      }
+      body {
+        background-color: black;
+      }
+      #slides {
+        vertical-align: middle;
+        text-align: center;
+        width: 100%;
+        height: 100%;
+      }
+      #slide {
+        display: inline-block;
+        height: 100%;
+        width: auto;
+      }
+    </style>
+
+    <script src="getimages.php"></script>
+    <script src="alphanum.js"></script>
+    <script src="http://cdn.pubnub.com/pubnub-3.7.1.min.js"></script>
+
+    <script type="text/javascript">
+        // Sort the slides in natural order
+        galleryarray.sort(alphanum);
+
+        // Current slide
+        var curSlide = 0;
+
+        // function preload(imageArray, index) {
+        //     index = index || 0;
+        //     if (imageArray && imageArray.length > index) {
+        //       var img = new Image ();
+        //       img.onload = function() {
+        //         preload(imageArray, index + 1);
+        //       }
+        //     }
+        //     img.src = galleryarray[index]['serving_url'];
+        // }
+        // preload(galleryarray);
+
+        // Get an unique pubnub id
+        var my_id = PUBNUB.uuid();
+
+        // Initialize with Publish & Subscribe Keys
+        var pubnub = PUBNUB.init({
+            publish_key: 'demo',
+            subscribe_key: 'demo',
+            uuid: my_id
+        });
+
+        // Subscribe to a channel
+        pubnub.subscribe({
+            channel: 'dj_press',
+            presence: function(m){console.log(m)},
+            message: parseMessage,
+            error: function (error) {
+             // Handle error here
+             console.log(JSON.stringify(error));
+            }
+        });
+
+        // Parse messages received from PubNub platform
+        function parseMessage( message ) {
+            // ignore my messages
+            if (message.my_id === my_id) {
+              // console.log('my message: ' + JSON.stringify(message))
+              return;
+            }
+            if (typeof message.newSlide !== 'undefined') {
+              newSlide(message.newSlide);
+              // console.log(message.newSlide)
+            } else {
+              console.log(JSON.stringify(message))
+            }
+        }
+
+        // Define a new slide
+        function newSlide(slideNumber){
+            if (curSlide < 0 || curSlide > galleryarray.length-1) {
+              return;
+            }
+            curSlide = slideNumber;
+            document.getElementById("slide").setAttribute("src", "slides/"+galleryarray[curSlide]);
+        }
+
+        // Go to previous slide
+        function prevSlide(){
+            if (curSlide != 0) {
+              curSlide = curSlide-1;
+            } else {
+              return;
+            }
+            document.getElementById("slide").setAttribute("src", "slides/"+galleryarray[curSlide]);
+
+            pubnub.publish({
+                  channel: 'dj_press',
+                  message: {"newSlide": curSlide, "my_id": my_id}
+            });
+        }
+
+        // Go to next slide
+        function nextSlide(){
+            if (curSlide < galleryarray.length-1) {
+                curSlide = curSlide + 1;
+            } else {
+              return;
+            }
+            document.getElementById("slide").setAttribute("src", "slides/"+galleryarray[curSlide]);
+
+            pubnub.publish({
+                  channel: 'dj_press',
+                  message: {"newSlide": curSlide, "my_id": my_id}
+            });
+        }
+
+        // Verify key pressed and do some action
+        function checkKey(e) {
+            e = e || window.event;
+            if (e.keyCode === 39) {
+              nextSlide();
+            } else if (e.keyCode === 37) {
+              prevSlide();
+            }
+        }
+
+        document.onkeydown = checkKey;
+
+    </script>
+
+  </head>
+
+  <body onload="newSlide(0)">
+
+    <div id="slides">
+      <img id="slide" src="dj.png"/>
+    </div>
+
+  </body>
+</html>
