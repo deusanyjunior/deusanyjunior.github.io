@@ -21,28 +21,28 @@
       }
     </style>
 
-    <script src="getimages.php"></script>
-    <script src="alphanum.js"></script>
     <script src="http://cdn.pubnub.com/pubnub-3.7.1.min.js"></script>
 
     <script type="text/javascript">
-        // Sort the slides in natural order
-        galleryarray.sort(alphanum);
 
         // Current slide
-        var curSlide = 0;
+        var curSlide = 1;
+        var lastSlide = 0;
 
-        // function preload(imageArray, index) {
-        //     index = index || 0;
-        //     if (imageArray && imageArray.length > index) {
-        //       var img = new Image ();
-        //       img.onload = function() {
-        //         preload(imageArray, index + 1);
-        //       }
-        //     }
-        //     img.src = galleryarray[index]['serving_url'];
-        // }
-        // preload(galleryarray);
+        // Preload the slides and set the lastSlide number
+        function preloadSlide(number) {
+            var img = new Image ();
+            img.src = "slides/slide"+number+".svg";
+            img.number = number;
+            img.onload = function() {
+                lastSlide = img.number
+                preloadSlide(img.number+1);
+            }
+            img.onerror = function() {
+                lastSlide = img.number - 1;
+            }
+        }
+        preloadSlide(1);
 
         // Get an unique pubnub id
         var my_id = PUBNUB.uuid();
@@ -82,21 +82,20 @@
 
         // Define a new slide
         function newSlide(slideNumber){
-            if (curSlide < 0 || curSlide > galleryarray.length-1) {
+            if (slideNumber < 1 || slideNumber > lastSlide) {
               return;
             }
             curSlide = slideNumber;
-            document.getElementById("slide").setAttribute("src", "slides/"+galleryarray[curSlide]);
+            document.getElementById("slide").setAttribute("src", "slides/slide"+curSlide+".svg");
         }
 
         // Go to previous slide
         function prevSlide(){
-            if (curSlide != 0) {
-              curSlide = curSlide-1;
-            } else {
+            if (curSlide === 1) {
               return;
             }
-            document.getElementById("slide").setAttribute("src", "slides/"+galleryarray[curSlide]);
+            curSlide = curSlide-1;
+            document.getElementById("slide").setAttribute("src", "slides/slide"+curSlide+".svg");
 
             pubnub.publish({
                   channel: 'dj_press',
@@ -106,12 +105,11 @@
 
         // Go to next slide
         function nextSlide(){
-            if (curSlide < galleryarray.length-1) {
-                curSlide = curSlide + 1;
-            } else {
-              return;
+            if (curSlide === lastSlide) {
+                return;
             }
-            document.getElementById("slide").setAttribute("src", "slides/"+galleryarray[curSlide]);
+            curSlide = curSlide + 1;
+            document.getElementById("slide").setAttribute("src", "slides/slide"+curSlide+".svg");
 
             pubnub.publish({
                   channel: 'dj_press',
@@ -135,7 +133,7 @@
 
   </head>
 
-  <body onload="newSlide(0)">
+  <body onload="newSlide(1)">
 
     <div id="slides">
       <img id="slide" src="dj.png"/>
